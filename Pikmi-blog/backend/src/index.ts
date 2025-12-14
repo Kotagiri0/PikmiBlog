@@ -12,7 +12,6 @@ import { errorHandler } from './middleware/errorHandler';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -34,10 +33,5 @@ app.get('/health', (req, res) => {
 });
 
 app.use(errorHandler);
-
-app.listen(PORT, () => {
-  console.log(`Back запущен на http://localhost:${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-});
 
 export default app;
