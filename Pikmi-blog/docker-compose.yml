@@ -1,0 +1,64 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: pikmi_db
+    restart: always
+    environment:
+      POSTGRES_USER: pikmi
+      POSTGRES_PASSWORD: pikmi123
+      POSTGRES_DB: pikmi_blog
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - pikmi_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pikmi_backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://pikmi:pikmi123@db:5432/pikmi_blog
+      JWT_SECRET: super_secret_jwt_key_change_in_production
+      JWT_REFRESH_SECRET: super_secret_refresh_key_change_in_production
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - pikmi_network
+    command: npm run dev
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pikmi_frontend
+    restart: always
+    ports:
+      - "8000:5173"
+    environment:
+      VITE_API_URL: http://localhost:3000/api
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - pikmi_network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+
+networks:
+  pikmi_network:
+    driver: bridge

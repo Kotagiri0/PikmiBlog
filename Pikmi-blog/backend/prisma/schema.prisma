@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique @db.VarChar(50)
+  email        String   @unique @db.VarChar(100)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  fullName     String?  @map("full_name") @db.VarChar(100)
+  bio          String?  @db.Text
+  avatarUrl    String?  @map("avatar_url") @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  posts         Post[]
+  comments      Comment[]
+  favorites     Favorite[]
+  likes         Like[]
+  followers     Subscription[] @relation("Following")
+  following     Subscription[] @relation("Follower")
+
+  @@map("users")
+}
+
+model Post {
+  id         Int      @id @default(autoincrement())
+  title      String   @db.VarChar(200)
+  content    String   @db.Text
+  authorId   Int      @map("author_id")
+  slug       String   @unique @db.VarChar(255)
+  published  Boolean  @default(false)
+  viewsCount Int      @default(0) @map("views_count")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+  favorites Favorite[]
+  likes     Like[]
+  tags      PostTag[]
+
+  @@index([authorId])
+  @@index([slug])
+  @@map("posts")
+}
+
+model Tag {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique @db.VarChar(50)
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  posts PostTag[]
+
+  @@map("tags")
+}
+
+model PostTag {
+  postId Int @map("post_id")
+  tagId  Int @map("tag_id")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("post_tags")
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  postId    Int      @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@map("favorites")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  authorId  Int      @map("author_id")
+  postId    Int      @map("post_id")
+  parentId  Int?     @map("parent_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  author  User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@map("comments")
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  postId    Int      @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@map("likes")
+}
+
+model Subscription {
+  id          Int      @id @default(autoincrement())
+  followerId  Int      @map("follower_id")
+  followingId Int      @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower  User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("subscriptions")
+}

@@ -1,0 +1,43 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 23.12.0
+    hooks:
+      - id: black
+        language_version: python3.10
+        files: \.py$
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.8
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        files: \.py$
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.7.1
+    hooks:
+      - id: mypy
+        files: \.py$
+        args: [--strict]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.56.0
+    hooks:
+      - id: eslint
+        files: \.(ts|tsx|js|jsx)$
+        types: [file]
+        args: [--fix]
+        additional_dependencies:
+          - eslint@8.56.0
+          - '@typescript-eslint/parser@6.15.0'
+          - '@typescript-eslint/eslint-plugin@6.15.0'
