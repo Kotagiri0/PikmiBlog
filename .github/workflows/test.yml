@@ -27,39 +27,44 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.x]  # Убрал 18.x для упрощения
+        node-version: [20.x]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # 1. Клонируем репозиторий
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        # ВАЖНО: Уберите эту строку сначала для тестирования
-        # cache-dependency-path: backend/package-lock.json
+      # 2. Node.js + npm cache (ВАЖНО: правильный путь к lock-файлу)
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: Pikmi-blog/backend/package-lock.json
 
-    - name: Debug file structure
-      run: |
-        echo "Checking for package-lock.json files:"
-        find . -name "package-lock.json" -type f | head -20
-        echo ""
-        echo "Checking backend directory:"
-        ls -la backend/ 2>/dev/null || echo "backend/ not found"
-        echo ""
-        echo "Checking blog-api directory:"
-        ls -la blog-api/ 2>/dev/null || echo "blog-api/ not found"
+      # 3. Установка зависимостей
+      - name: Install dependencies
+        working-directory: Pikmi-blog/backend
+        run: npm ci
 
-    - name: Install dependencies
-      working-directory: ./backend  # или ./blog-api
-      run: npm ci
+      # 4. Настройка env
+      - name: Setup environment variables
+        working-directory: Pikmi-blog/backend
+        run: |
+          cp .env.example .env
+          echo "DATABASE_URL=postgresql://testuser:testpassword@localhost:5432/pikmi_blog_test?schema=public" >> .env
+          echo "NODE_ENV=test" >> .env
 
-    - name: Setup environment
-      working-directory: ./backend  # или ./blog-api
-      run: |
-        cp .env.test .env
-        echo "DATABASE_URL=postgresql://testuser:testpassword@localhost:5432/pikmi_blog_test?schema=public" >> .env
+      # 5. Prisma
+      - name: Generate Prisma Client
+        working-directory: Pikmi-blog/backend
+        run: npx prisma generate
 
-    # ... остальные шаги
+      - name: Run Prisma migrations
+        working-directory: Pikmi-blog/backend
+        run: npx prisma migrate deploy
+
+      # 6. Запуск тестов
+      - name: Run tests
+        working-directory: Pikmi-blog/backend
+        run: npm test
