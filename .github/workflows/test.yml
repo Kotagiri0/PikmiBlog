@@ -30,11 +30,11 @@ jobs:
         node-version: [20.x]
 
     steps:
-      # 1. Клонируем репозиторий
+      # 1. Checkout репозитория
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Node.js + npm cache (ВАЖНО: правильный путь к lock-файлу)
+      # 2. Node.js + npm cache (ВАЖНО для монорепо)
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
@@ -47,12 +47,11 @@ jobs:
         working-directory: Pikmi-blog/backend
         run: npm ci
 
-      # 4. Настройка env
+      # 4. Создание .env (без файлов в гите)
       - name: Setup environment variables
         working-directory: Pikmi-blog/backend
         run: |
-          cp .env.example .env
-          echo "DATABASE_URL=postgresql://testuser:testpassword@localhost:5432/pikmi_blog_test?schema=public" >> .env
+          echo "DATABASE_URL=postgresql://testuser:testpassword@localhost:5432/pikmi_blog_test?schema=public" > .env
           echo "NODE_ENV=test" >> .env
 
       # 5. Prisma
