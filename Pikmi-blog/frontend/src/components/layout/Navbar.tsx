@@ -17,6 +17,15 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center gap-4">
+            {isAuthenticated && (
+              <Link
+                to="/search-users"
+                className="text-gray-700 dark:text-gray-300 pink:text-pink-300 hover:text-blue-600 dark:hover:text-blue-400 pink:hover:text-pink-400 transition"
+              >
+                🔍 Поиск
+              </Link>
+            )}
+
             <ThemeSwitcher />
 
             {isAuthenticated ? (

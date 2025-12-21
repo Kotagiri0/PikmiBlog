@@ -12,6 +12,8 @@ import CreatePost from './pages/CreatePost';
 import EditPost from './pages/EditPost';
 import PostDetail from './pages/PostDetail';
 import Favorites from './pages/Favorites';
+import SearchUsers from './pages/SearchUsers';
+import UserProfile from './pages/UserProfile';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -31,6 +33,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/posts/:id" element={<PostDetail />} />
+                <Route path="/users/:id" element={<UserProfile />} />
 
                 <Route
                   path="/profile"
@@ -61,6 +64,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Favorites />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/search-users"
+                  element={
+                    <ProtectedRoute>
+                      <SearchUsers />
                     </ProtectedRoute>
                   }
                 />

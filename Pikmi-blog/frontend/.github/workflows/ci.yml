@@ -1,0 +1,188 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches: [ master, develop ]
+    paths:
+      - 'Pikmi-blog/frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+  pull_request:
+    branches: [ master, develop ]
+    paths:
+      - 'Pikmi-blog/frontend/**'
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: Pikmi-blog/frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: Pikmi-blog/frontend
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: Pikmi-blog/frontend
+        run: npm run lint
+
+      - name: Run TypeScript type checking
+        working-directory: Pikmi-blog/frontend
+        run: npm run type-check
+
+      - name: Check formatting
+        working-directory: Pikmi-blog/frontend
+        run: npm run format:check
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: Pikmi-blog/frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: Pikmi-blog/frontend
+        run: npm ci
+
+      - name: Run tests
+        working-directory: Pikmi-blog/frontend
+        run: npm run test
+
+      - name: Generate coverage report
+        working-directory: Pikmi-blog/frontend
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./Pikmi-blog/frontend/coverage/coverage-final.json
+          flags: frontend
+          name: frontend-coverage
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: Pikmi-blog/frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: Pikmi-blog/frontend
+        run: npm ci
+
+      - name: Build application
+        working-directory: Pikmi-blog/frontend
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:3000/api' }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-dist
+          path: Pikmi-blog/frontend/dist/
+          retention-days: 7
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.yourdomain.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: frontend-dist
+          path: dist/
+
+      - name: Deploy to staging server
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.STAGING_REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.STAGING_REMOTE_USER }}
+          TARGET: ${{ secrets.STAGING_REMOTE_TARGET }}
+          SOURCE: "dist/"
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/master'
+    environment:
+      name: production
+      url: https://yourdomain.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: frontend-dist
+          path: dist/
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./Pikmi-blog/frontend
+          file: ./Pikmi-blog/frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/pikmi-blog-frontend:latest
+            ${{ secrets.DOCKER_USERNAME }}/pikmi-blog-frontend:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/pikmi-blog-frontend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/pikmi-blog-frontend:buildcache,mode=max
+
+      - name: Deploy to production server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PROD_REMOTE_HOST }}
+          username: ${{ secrets.PROD_REMOTE_USER }}
+          key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/pikmi-blog
+            docker-compose pull frontend
+            docker-compose up -d frontend
+            docker image prune -f
