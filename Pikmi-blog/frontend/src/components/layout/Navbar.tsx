@@ -1,70 +1,106 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import ThemeSwitcher from './ThemeSwitcher';
 
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
+  const location = useLocation();
 
   return (
-    <nav className="bg-white dark:bg-gray-800 pink:bg-black shadow-md border-b dark:border-gray-700 pink:border-pink-900">
+    <motion.nav
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm border-b border-gray-200 dark:border-gray-800"
+    >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link
-            to="/"
-            className="text-xl font-bold text-gray-900 dark:text-white pink:text-pink-400 hover:text-blue-600 dark:hover:text-blue-400 pink:hover:text-pink-300 transition"
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            Блог
-          </Link>
+            <Link
+              to="/"
+              className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
+            >
+              Pikmi Blog
+            </Link>
+          </motion.div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <ThemeSwitcher />
 
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/create-post"
-                  className="px-4 py-2 bg-blue-600 pink:bg-[#FFF3E6] text-white pink:text-black rounded-lg hover:bg-blue-700 pink:hover:bg-[#FFE8CC] transition"
-                >
-                  Создать пост
-                </Link>
-                <Link
-                  to="/favorites"
-                  className="text-gray-700 dark:text-gray-300 pink:text-pink-300 hover:text-blue-600 dark:hover:text-blue-400 pink:hover:text-pink-400 transition"
-                >
-                  Избранное
-                </Link>
-                <Link
-                  to="/profile"
-                  className="text-gray-700 dark:text-gray-300 pink:text-pink-300 hover:text-blue-600 dark:hover:text-blue-400 pink:hover:text-pink-400 transition"
-                >
-                  {user?.username}
-                </Link>
-                <button
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link
+                    to="/create-post"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
+                  >
+                    ✏️ Создать пост
+                  </Link>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link
+                    to="/favorites"
+                    className={`px-3 py-2 rounded-lg transition-all duration-200 ${
+                      location.pathname === '/favorites'
+                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    ⭐ Избранное
+                  </Link>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link
+                    to="/profile"
+                    className={`px-3 py-2 rounded-lg transition-all duration-200 ${
+                      location.pathname === '/profile'
+                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    👤 {user?.username}
+                  </Link>
+                </motion.div>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={logout}
-                  className="px-4 py-2 text-gray-700 dark:text-gray-300 pink:text-pink-300 hover:text-red-600 dark:hover:text-red-400 pink:hover:text-red-400 transition"
+                  className="px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200"
                 >
                   Выйти
-                </button>
+                </motion.button>
               </>
             ) : (
               <>
-                <Link
-                  to="/login"
-                  className="text-gray-700 dark:text-gray-300 pink:text-pink-300 hover:text-blue-600 dark:hover:text-blue-400 pink:hover:text-pink-400 transition"
-                >
-                  Вход
-                </Link>
-                <Link
-                  to="/register"
-                  className="px-4 py-2 bg-blue-600 pink:bg-[#FFF3E6] text-white pink:text-black rounded-lg hover:bg-blue-700 pink:hover:bg-[#FFE8CC] transition"
-                >
-                  Регистрация
-                </Link>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link
+                    to="/login"
+                    className={`px-3 py-2 rounded-lg transition-all duration-200 ${
+                      location.pathname === '/login'
+                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    Вход
+                  </Link>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link
+                    to="/register"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
+                  >
+                    Регистрация
+                  </Link>
+                </motion.div>
               </>
             )}
           </div>
         </div>
       </div>
-    </nav>
+    </motion.nav>
   );
 }

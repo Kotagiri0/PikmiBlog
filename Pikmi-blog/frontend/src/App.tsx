@@ -23,7 +23,7 @@ function App() {
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pink:bg-black">
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
             <Navbar />
             <main className="container mx-auto px-4 py-8">
               <Routes>
@@ -66,7 +66,11 @@ function App() {
                 />
               </Routes>
             </main>
-            <ToastContainer position="bottom-right" />
+            <ToastContainer 
+              position="bottom-right"
+              toastClassName="dark:bg-gray-800 dark:text-white"
+              progressClassName="bg-blue-600"
+            />
           </div>
         </AuthProvider>
       </ThemeProvider>

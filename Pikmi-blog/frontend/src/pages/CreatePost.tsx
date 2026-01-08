@@ -1,25 +1,36 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import axios from '../api/axios';
 import { toast } from 'react-toastify';
+import Card from '../components/ui/Card';
+import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
 
 export default function CreatePost() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [published, setPublished] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ title?: string; content?: string }>({});
   const navigate = useNavigate();
+
+  const validate = () => {
+    const newErrors: { title?: string; content?: string } = {};
+    if (!title.trim() || title.length < 5) {
+      newErrors.title = 'Заголовок должен быть минимум 5 символов';
+    }
+    if (!content.trim() || content.length < 10) {
+      newErrors.content = 'Содержание должно быть минимум 10 символов';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim() || title.length < 5) {
-      toast.error('Заголовок должен быть минимум 5 символов');
-      return;
-    }
-
-    if (!content.trim() || content.length < 10) {
-      toast.error('Содержание должно быть минимум 10 символов');
+    if (!validate()) {
       return;
     }
 
@@ -32,7 +43,8 @@ export default function CreatePost() {
       });
       toast.success('Пост создан!');
       navigate(`/posts/${response.data.id}`);
-    } catch (error) {
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Ошибка при создании поста');
     } finally {
       setLoading(false);
     }
@@ -40,68 +52,95 @@ export default function CreatePost() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white pink:text-pink-300">
-        Создать новый пост
-      </h1>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="mb-6"
+      >
+        <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
+          ✍️ Создать новый пост
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Поделитесь своими мыслями с сообществом
+        </p>
+      </motion.div>
 
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 pink:bg-pink-950 p-6 rounded-lg shadow-md">
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 pink:text-pink-300 mb-2">
-            Заголовок
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pink:focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white pink:bg-gray-900 pink:border-pink-800 pink:text-pink-200"
-            placeholder="Введите заголовок..."
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 pink:text-pink-300 mb-2">
-            Содержание
-          </label>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={15}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pink:focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white pink:bg-gray-900 pink:border-pink-800 pink:text-pink-200"
-            placeholder="Напишите текст поста..."
-          />
-        </div>
-
-        <div className="mb-6">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={published}
-              onChange={(e) => setPublished(e.target.checked)}
-              className="w-4 h-4"
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <Card className="p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Input
+              type="text"
+              label="Заголовок"
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (errors.title) setErrors({ ...errors, title: undefined });
+              }}
+              placeholder="Введите заголовок..."
+              error={errors.title}
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300 pink:text-pink-300">
-              Опубликовать сразу
-            </span>
-          </label>
-        </div>
 
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-6 py-2 bg-blue-600 pink:bg-[#FFF3E6] text-white pink:text-black rounded-lg hover:bg-blue-700 pink:hover:bg-[#FFE8CC] disabled:opacity-50 transition"
-          >
-            {loading ? 'Создание...' : 'Создать пост'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="px-6 py-2 bg-gray-200 dark:bg-gray-700 pink:bg-pink-900 text-gray-700 dark:text-gray-300 pink:text-pink-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 pink:hover:bg-pink-800 transition"
-          >
-            Отмена
-          </button>
-        </div>
-      </form>
+            <div>
+              <Input
+                textarea
+                label="Содержание"
+                value={content}
+                onChange={(e) => {
+                  setContent(e.target.value);
+                  if (errors.content) setErrors({ ...errors, content: undefined });
+                }}
+                rows={15}
+                placeholder="Напишите текст поста..."
+                error={errors.content}
+                className="font-mono text-sm"
+              />
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {content.length} символов
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <input
+                type="checkbox"
+                id="published"
+                checked={published}
+                onChange={(e) => setPublished(e.target.checked)}
+                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              />
+              <label
+                htmlFor="published"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+              >
+                Опубликовать сразу
+              </label>
+            </div>
+
+            <div className="flex gap-4 pt-4">
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                disabled={loading}
+                loading={loading}
+              >
+                Создать пост
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate('/')}
+              >
+                Отмена
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </motion.div>
     </div>
   );
 }
